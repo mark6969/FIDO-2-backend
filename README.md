@@ -23,5 +23,5 @@ pip install -r requirements.txt
 Finally, run the server to view the demo at http://localhost:5000:
 
 ```sh
-./start-server.sh
+ python3 src/free5gmano.py
 ```
