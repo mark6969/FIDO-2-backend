@@ -69,9 +69,10 @@ def index():
 
 @app.route("/generate-registration-options", methods=["POST"])
 def registerFidoOptions():
-    print("generate-registration-options")
+    # print("generate-registration-options")
     user_data = request.get_json()
     bundle_id = user_data.get("username")
+    delete_user(bundle_id)
     registration_options = generate_registration_options(
         rp_id=rp_id,
         rp_name=rp_name,
@@ -86,8 +87,10 @@ def registerFidoOptions():
         supported_pub_key_algs=[COSEAlgorithmIdentifier.ECDSA_SHA_256],
         challenge=str(random.randint(1000000, 9999999)).encode('utf-8')
     )
+    # 測試用，每次都刪除原先資料
+    # delete_all_users()
     create_user(bundle_id, registration_options.challenge, "[]")
-    print("gr_challenge=%s" % registration_options.challenge)
+    # print("gr_challenge=%s" % registration_options.challenge)
     # in_memory_db[bundle_id] = UserAccount(
     #     id=bundle_id,
     #     challenge=registration_options.challenge,
@@ -105,8 +108,8 @@ def registerOptionResponse():
     bundle_id = user_data.get("username")
     # user = in_memory_db[bundle_id]
     challenge, credentials =get_user_data(bundle_id)
-    print("vr_challenge=%s" % challenge)
-    print("vr_credentials=%s" % credentials)
+    # print("vr_challenge=%s" % challenge)
+    # print("vr_credentials=%s" % credentials)
     try:
         # pendingverification_data = request.get_data()
         pendingverification_data = json.dumps(user_data, indent=2).encode('utf-8')
@@ -144,13 +147,13 @@ def registerOptionResponse():
 
 @app.route("/generate-authentication-options", methods=["POST"])
 def sigInOptionRequest():
-    print("generate-authentication-options")
+    # print("generate-authentication-options")
     user_data = request.get_json()
     bundle_id = user_data.get("username")
     # user = in_memory_db[bundle_id]
     challenge, credentials =get_user_data(bundle_id)
-    print("ga_challenge=%s" % challenge)
-    print("ga_credentials=%s" % credentials)
+    # print("ga_challenge=%s" % challenge)
+    # print("ga_credentials=%s" % credentials)
     login_options = generate_authentication_options(
         rp_id=rp_id,
         allow_credentials=[
@@ -167,7 +170,7 @@ def sigInOptionRequest():
 
 @app.route("/verify-authentication-response", methods=["POST"])
 def hander_verify_authentication_response():
-    print("verify-authentication-response")
+    # print("verify-authentication-response")
     user_data = request.get_json()
     raw_id = user_data.get("rawId").split("=")[0]
     user_data["id"] = raw_id
@@ -175,7 +178,7 @@ def hander_verify_authentication_response():
     bundle_id = user_data.get("username")
     # user = in_memory_db[bundle_id]
     challenge, credentials =get_user_data(bundle_id)
-    print("va_challenge=%s" % challenge)
+    # print("va_challenge=%s" % challenge)
     pendingverification_data = json.dumps(user_data, indent=2).encode('utf-8')
 
     pendingverification_credential = AuthenticationCredential.parse_raw(
@@ -211,11 +214,27 @@ def hander_verify_authentication_response():
             }
     return default
 
+@app.route("/check-repeat", methods=["POST"])
+def check_repeat():
+    user_data = request.get_json()
+    bundle_id = user_data.get("username")
+    user_instance = db.session.query(user).filter_by(id=bundle_id).first()
+    if user_instance:
+        return {
+                "type": False,
+                "message": "使用者重複",
+            }
+    else:
+        return {
+                "type": True,
+                "message": "新使用者",
+            }
+
 @app.route("/.well-known/apple-app-site-association", methods=["GET"])
 def apple_app_site_association():
     return {
     "webcredentials": {
-        "apps": ["NHPJ3CC74D.com.leoho.passkeysexample", "S8FBP4YLUA.com.leoho.passkeysexample", "352B3NNBK2.com.tekpass.keep"],
+        "apps": ["NHPJ3CC74D.com.leoho.passkeysexample", "S8FBP4YLUA.com.leoho.passkeysexample", "352B3NNBK2.com.tekpass.keep", "352B3NNBK2.com.tekpass.card.ios"],
     }
 }
 
@@ -233,20 +252,20 @@ def create_user(bundle_id, challenge, credentials):
     db.session.commit()
 
 def get_user_data(bundle_id):
-    print("==============get_user_data=============")
-    print("bundle_id=%s" % bundle_id)
+    # print("==============get_user_data=============")
+    # print("bundle_id=%s" % bundle_id)
     challenge = db.session.query(user).filter_by(id=bundle_id).first().challenge
     credentials = eval(db.session.query(user).filter_by(id=bundle_id).first().credentials)
-    print("challenge=%s" % challenge)
-    print("credentials=%s" % credentials)
+    # print("challenge=%s" % challenge)
+    # print("credentials=%s" % credentials)
     return challenge, credentials
 
 def add_credential(bundle_id, credential):
-    print("======add_credential=======")
+    # print("======add_credential=======")
     user_instance = db.session.query(user).filter_by(id=bundle_id).first()
     origin_credentials = eval(user_instance.credentials)
-    print("origin_credentials=%s" % origin_credentials)
-    print("credential=%s" % credential)
+    # print("origin_credentials=%s" % origin_credentials)
+    # print("credential=%s" % credential)
     origin_credentials.append(credential)
     # print(origin_credentials.append(credential))
     # print("credentials=%s" % credentials)
@@ -257,6 +276,19 @@ def updata_challenge(bundle_id, challenge):
     user_instance = db.session.query(user).filter_by(id=bundle_id).first()
     user_instance.challenge = challenge
     db.session.commit()
+
+def delete_all_users():
+    # print("==============delete_all_users=============")
+    db.session.query(user).delete()
+    db.session.commit()
+
+def delete_user(bundle_id):
+    # print("==============delete_user=============")
+    user_instance = db.session.query(user).filter_by(id=bundle_id).first()
+
+    if user_instance:
+        db.session.delete(user_instance)
+        db.session.commit()
 
 if __name__ == '__main__':
     with app.app_context():
