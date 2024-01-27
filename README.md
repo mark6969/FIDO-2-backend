@@ -1,26 +1,16 @@
-# Going Passwordless with py_webauthn (Sample RP)
+使用 WebAuthn 實作 Fido2 認證後端與長茂TekPass前端互相搭配，此為Demo版本，不涉及機密資訊
 
-A basic implementation of a WebAuthn RP using the [py_webauthn](https://github.com/duo-labs/py_webauthn) library for passwordless account registration and authentication.
-
-## Requirements
+## 需求
 
 - Python 3.9+
 
-## Starting the demo
-
-First, set up a virtual environment:
-
-```sh
-python3 -m venv venv && source venv/bin/activate
-```
-
-Next, install dependencies:
+## 安裝對應套件
 
 ```sh
 pip install -r requirements.txt
 ```
 
-Finally, run the server to view the demo at http://localhost:5000:
+## 執行環境
 
 ```sh
  python3 src/free5gmano.py
