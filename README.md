@@ -1,4 +1,4 @@
-使用 WebAuthn 實作 Fido2 認證後端與長茂TekPass前端互相搭配，此為Demo版本，不涉及機密資訊
+使用 WebAuthn 實作 Fido2 認證後端與對應ios前端互相搭配，此為Demo版本，不涉及機密資訊
 
 ## 需求
 
